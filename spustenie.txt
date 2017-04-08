@@ -1,0 +1,1 @@
+Na spustenie aplikácie stačí otvoriť index.html v Chrome.
