@@ -1,10 +1,8 @@
 function Garden(gardenWidth, gardenHeight, stones){
   this.width = gardenWidth;
   this.height = gardenHeight;
-  this.perimeter = 2*(gardenWidth + gardenHeight);
   this.garden;
-
-
+  this.perimeter = 2*(gardenWidth + gardenHeight);
 
   this.init = () => {
     //init 2d array
@@ -16,36 +14,37 @@ function Garden(gardenWidth, gardenHeight, stones){
 
   this.unrake = () => {
     //set to zeros
-    for(var y=0; y<this.height; y++){
-      for(var x=0; x<this.width; x++){
+    for(let y=0; y<this.height; y++){
+      for(let x=0; x<this.width; x++){
         this.garden[x][y] = 0;
       }
     }
 
     //add stones
-    for(var i in stones){
+    for(let i in stones){
       this.garden[stones[i][0]][stones[i][1]] = -1;
     }
   }
 
-    this.countZeros = () => {
-      let count = 0;
-      for(var y=0; y<this.height; y++){
-        for(var x=0; x<this.width; x++){
-          if(this.garden[x][y] == 0)
-            count++;
-        }
+  this.countZeros = () => {
+    let count = 0;
+
+    for(let y=0; y<this.height; y++){
+      for(let x=0; x<this.width; x++){
+        if(this.garden[x][y] == 0)
+          count++;
       }
-      return count;
     }
 
+    return count;
+  }
 
   this.init();
 
-  this.newPosition = () => {
+  this.newStartingPosition = () => {
     let coord = {};
     let pos = floor(random(this.perimeter)+1);
-  //  console.log('pos' + pos);
+
     let w = this.width;
     let h = this.height;
 
@@ -65,25 +64,17 @@ function Garden(gardenWidth, gardenHeight, stones){
       coord['x'] = -1;
       coord['y'] = pos-(2*w+h+1);
     }
+
     return coord;
   }
 
-  this.newDirection = () => {
+  this.newPreferredRotationDirection = () => {
     return random(["left", "right"]);
   }
 
-  this.getPerimeter = () => {
-    return this.Perimeter;
-  }
   this.getGarden = () => {
     return this.garden;
   }
-
-  // this.getUnrakedGarden = () => {
-  //   let newGarden = new Array(this.Width);
-  //   arrayCopy(this., newGarden);
-  //   return newGarden;
-  // }
 
   this.getWidth = () => {
     return this.width;
@@ -94,6 +85,7 @@ function Garden(gardenWidth, gardenHeight, stones){
   }
 
   this.printGarden = () => {
+    let ans='';
     let line = '';
     for(let y=0; y < this.height; y++){
       for(let x = 0; x < this.width; x++){
@@ -104,8 +96,9 @@ function Garden(gardenWidth, gardenHeight, stones){
 
       }
       console.log(line);
+      ans+=line+"<br>";
       line = '';
     }
+    return ans;
   }
-
 }

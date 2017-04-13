@@ -1,97 +1,94 @@
-function DNA(genomesMaxSize) {
+function Individual(genomesMaxSize) {
   this.genes = [];
   this.fitness = 0;
   this.stuck = false;
 
   //init genes
-  for (var i = 0; i < genomesMaxSize; i++) {
-    let newStartingPosition = garden.newPosition();
+  for (let i = 0; i < genomesMaxSize; i++) {
+    let newStartingPosition = garden.newStartingPosition();
 
     let gene = {
       x: newStartingPosition['x'],
       y: newStartingPosition['y'],
-      prefDir: garden.newDirection()
+      prefRotDir: garden.newPreferredRotationDirection()
     }
 
     this.genes[i] = gene;
   }
 
+  this.getFitness = () => {
+    return this.fitness;
+  }
+
   this.calcFitness = function(target) {
      let score = 0;
-     garden.unrake();
-    //  this.genes[0]['x'] = 2;
-    //  this.genes[0]['y'] = -1;
+     let marker = 1;
 
+     garden.unrake();
 
      for(i in this.genes){
-       if(this.stuck)
-        break;
+       if(this.stuck) break;
 
        let startState = {
          x: this.genes[i]['x'],
          y: this.genes[i]['y'],
-         prefDir: this.genes[i]['prefDir']
+         prefRotDir: this.genes[i]['prefRotDir']
        };
 
-       //console.log('start');
-       //console.log(i);
-       //console.log(startState);
-       //garden.printGarden();
-       //console.log('');
-
+       // start posotion is top of garden?
        if(startState['y'] == -1){
          //rake downwards
-         ////console.log(startState);
-         this.rake(startState, 'down', i);
+         if(this.rake(startState, 'down', marker))
+          marker++;
        }
+       // start posotion is right of garden?
        else if(startState['x'] == garden.getWidth()){
          //rake leftwards
-         this.rake(startState, 'left', i);
+         if(this.rake(startState, 'left', marker))
+          marker++;
        }
+       // start posotion is bottom of garden?
        else if(startState['y'] == garden.getHeight()){
          //rake upwards
-         this.rake(startState, 'up', i);
+         if(this.rake(startState, 'up', marker))
+          marker++;
        }
+       // start posotion is left of garden?
        else if(startState['x'] == -1){
          //rake rightwards
-         this.rake(startState, 'right', i);
+         if(this.rake(startState, 'right', marker))
+          marker++;
        }
 
      }
 
-     //console.log('finish');
-    /// garden.printGarden();
-
      score = target - garden.countZeros();
-     //console.log('score:' + score);
+
+     if(this.stuck)
+      this.fitness -= 1000;
+    else
      this.fitness = score;
   }
 
-
   this.mutate = function(mutationRate) {
-    for (var i = 0; i < this.genes.length; i++) {
+    for (let i in this.genes) {
       if (random(1) < mutationRate) {
-        let newStartingPosition = garden.newPosition();
+        let newStartingPosition = garden.newStartingPosition();
 
         let gene = {
           x: newStartingPosition['x'],
           y: newStartingPosition['y'],
-          prefDir: garden.newDirection()
+          prefRotDir: garden.newPreferredRotationDirection()
         }
 
         this.genes[i] = gene;
       }
     }
   }
-this.limit = 100;
-  this.rake = (state, direction, index) => {
-    if(this.limit == 0)
-    return;
-    this.limit --;
-    //console.log(state);
 
+  this.rake = (state, direction, marker) => {
+    let rakedFlag = false;
     let tempGarden = garden.getGarden();
-    let marker = parseInt(index) +1;
     let x = state['x'];
     let y = state['y'];
 
@@ -100,47 +97,46 @@ this.limit = 100;
         while(tempGarden[x][y+1] == 0){
           tempGarden[x][y+1] = marker;
           y++;
-          if(tempGarden[x][y+1] == undefined)
-            y++;
         }
+        if(tempGarden[x][y+1] == undefined)
+          y++;
 
         break;
       case 'left':
         while(tempGarden[x-1] != undefined && tempGarden[x-1][y] == 0){
           tempGarden[x-1][y] = marker;
           x--;
-          if(tempGarden[x-1] == undefined)
-            x--;
         }
+        if(tempGarden[x-1] == undefined)
+          x--;
 
         break;
       case 'up':
         while(tempGarden[x][y-1] == 0){
           tempGarden[x][y-1] = marker;
           y--;
-          if(tempGarden[x][y-1] == undefined)
-            y--;
         }
+        if(tempGarden[x][y-1] == undefined)
+          y--;
 
         break;
       case 'right':
         while(tempGarden[x+1] != undefined && tempGarden[x+1][y] == 0){
           tempGarden[x+1][y] = marker;
           x++;
-          if(tempGarden[x+1] == undefined)
-            x++;
         }
+        if(tempGarden[x+1] == undefined)
+          x++;
 
         break;
     }
 
+    // has raked something
+    if(abs(x - state['x']) > 0 || abs(y - state['y']) > 0)
+      rakedFlag = true;
 
-    // garden.printGarden();
-//console.log(' ');
     if(this.isOut(x, y))
-      return;
-
-
+      return rakedFlag;
 
     //change direction and rake again if possible
     state['x'] = x;
@@ -148,12 +144,24 @@ this.limit = 100;
     let newDir = this.findNewDirection(state, direction);
 
     if(newDir)
-      this.rake(state, newDir, index);
-    else {
+      this.rake(state, newDir, marker);
+    else
       this.stuck = true;
-    }
+
+    return rakedFlag;
   }
 
+  this.isOut = (x, y) => {
+    if(y == -1 || y == garden.getHeight()){
+      return true;
+    }
+    else if(x == -1 || x == garden.getWidth()){
+      return true;
+    }
+    return false;
+  }
+
+  // za tuto funkciu sa hanbim
   this.findNewDirection = (state, direction) => {
     let tempGarden = garden.getGarden();
     let x = state['x'];
@@ -171,20 +179,15 @@ this.limit = 100;
       if(tempGarden[x-1] == undefined || tempGarden[x-1][y] == 0){
         canGo[i] = 'right';
       }
-      //console.log(canGo);
+
       if(canGo.length != 0){
         if(canGo.length == 1)
           newDir = canGo[0];
-        else {
-          newDir = state['prefDir'];
-        }
-        if(newDir == 'right')
-          newDir = 'left';
         else
-          newDir = 'right';
+          newDir = state['prefRotDir'];
+
+        (newDir == 'right')? newDir = 'left' : newDir = 'right';
       }
-
-
     }
     else if(direction == 'up'){
       //look left
@@ -195,18 +198,13 @@ this.limit = 100;
       if(tempGarden[x+1] == undefined || tempGarden[x+1][y] == 0){
         canGo[i] = 'right';
       }
-      //console.log(canGo);
+
       if(canGo.length != 0){
         if(canGo.length == 1)
           newDir = canGo[0];
-        else {
-          newDir = state['prefDir'];
-        }
-        if(newDir == 'left')
-          newDir = 'left';
         else
-          newDir = 'right';
-      }
+          newDir = state['prefRotDir'];
+        }
 
     }
     else if(direction == 'left'){
@@ -218,20 +216,15 @@ this.limit = 100;
       if(tempGarden[x][y-1] == 0 || tempGarden[x][y-1] == undefined){
         canGo[i] = 'right';
       }
-      //console.log(canGo);
+
       if(canGo.length != 0){
         if(canGo.length == 1)
           newDir = canGo[0];
-        else {
-          newDir = state['prefDir'];
-        }
-        if(newDir == 'left')
-          newDir = 'down';
         else
-          newDir = 'up';
-          //console.log(newDir);
-      }
+          newDir = state['prefRotDir'];
 
+        (newDir == 'left')? newDir = 'down' : newDir = 'up';
+      }
 
     }
     else if(direction == 'right'){
@@ -243,33 +236,20 @@ this.limit = 100;
       if(tempGarden[x][y+1] == 0 || tempGarden[x][y+1] == undefined){
         canGo[i] = 'right';
       }
-      //console.log(canGo);
+
       if(canGo.length != 0){
         if(canGo.length == 1)
           newDir = canGo[0];
         else {
-          newDir = state['prefDir'];
+          newDir = state['prefRotDir'];
         }
-        if(newDir == 'left')
-          newDir = 'up';
-        else
-          newDir = 'down';
+        (newDir == 'left')? newDir = 'up' : newDir = 'down';
       }
 
     }
 
-
-
     return newDir;
   }
 
-  this.isOut = (x, y) => {
-    if(y == -1 || y == garden.getHeight()){
-      return true;
-    }
-    else if(x == -1 || x == garden.getWidth()){
-      return true;
-    }
-    return false;
-  }
+
 }

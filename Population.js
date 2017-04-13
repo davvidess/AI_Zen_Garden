@@ -1,14 +1,16 @@
-function Population(populationSize, mutationRate, genomesMaxSize, targetScore){
+function Population(populationSize, mutationRate, genomesMaxSize, targetScore, strategy){
   this.population = [];
   this.matingPool = [];
   this.generations = 0;
-  this.finished = false;
+  this.evolved = false;
   this.mutationRate = mutationRate;
   this.targetScore = targetScore;
+  this.bestScore = 0;
+  this.mean;
+  this.makeSelection;
 
   for(let i = 0; i< populationSize; i++){
-    this.population[i] = new DNA(genomesMaxSize);
-
+    this.population[i] = new Individual(genomesMaxSize);
   }
 
   this.calcFitness = () => {
@@ -16,31 +18,47 @@ function Population(populationSize, mutationRate, genomesMaxSize, targetScore){
       this.population[i].calcFitness(this.targetScore);
     }
   }
-  this.calcFitness();
 
-  this.makeSelection = () => {
-    // Clear the ArrayList
+  this.tournamentSelection = () => {
     this.matingPool = [];
 
-    var maxFitness = 0;
-    for (var i = 0; i < this.population.length; i++) {
+    for (let i in this.population) {
+      let contester1 = floor(random(this.population.length));
+      let contester2 = floor(random(this.population.length));
+      let contester3 = floor(random(this.population.length));
+
+      if(this.population[contester1].getFitness() > this.population[contester2].getFitness()
+      && this.population[contester1].getFitness() > this.population[contester3].getFitness())
+        this.matingPool.push(this.population[contester1]);
+      else
+        if(this.population[contester2].getFitness() > this.population[contester3].getFitness())
+            this.matingPool.push(this.population[contester2]);
+        else
+          this.matingPool.push(this.population[contester3]);
+    }
+
+  }
+
+  this.rouletteSelection = () => {
+    this.matingPool = [];
+
+    let maxFitness = 0;
+    for (let i in this.population) {
       if (this.population[i].fitness > maxFitness) {
         maxFitness = this.population[i].fitness;
       }
     }
 
-    // Based on fitness, each member will get added to the mating pool a certain number of times
-    // a higher fitness = more entries to mating pool = more likely to be picked as a parent
-    // a lower fitness = fewer entries to mating pool = less likely to be picked as a parent
-    for (var i = 0; i < this.population.length; i++) {
+    for (let i in this.population) {
+      let fitness = map(this.population[i].fitness, 0, maxFitness, 0, 1);
+      let n = floor(fitness * 100);
 
-      var fitness = map(this.population[i].fitness,0,maxFitness,0,1);
-      var n = floor(fitness * 100);  // Arbitrary multiplier, we can also use monte carlo method
-      for (var j = 0; j < n; j++) {              // and pick two random numbers
+      for (let j = 0; j < n; j++)
         this.matingPool.push(this.population[i]);
-      }
     }
   }
+
+  (strategy == 'tournament')? this.makeSelection = this.tournamentSelection : this.makeSelection = this.rouletteSelection;
 
   this.generateOffspring = () => {
     for(let i in this.population){
@@ -57,11 +75,12 @@ function Population(populationSize, mutationRate, genomesMaxSize, targetScore){
       child.mutate(this.mutationRate);
       this.population[i] = child;
     }
+
     this.generations++;
   }
 
   this.crossover = function(parent1, parent2) {
-    let child = new DNA(genomesMaxSize);
+    let child = new Individual(genomesMaxSize);
 
     let midpoint = floor(random(child.genes.length));
 
@@ -78,26 +97,33 @@ function Population(populationSize, mutationRate, genomesMaxSize, targetScore){
   }
 
   this.evaluate = function() {
-    let bestScore = 0;
+    let maxScore = 0;
     let index = 0;
 
     for (let i in this.population) {
-      if (this.population[i].fitness > bestScore) {
+      if (this.population[i].getFitness() > maxScore) {
         index = i;
-        bestScore = this.population[i].fitness;
+        maxScore = this.population[i].getFitness();
       }
     }
 
-    this.best = this.population[index];
-    console.log('best', bestScore);
-    if (bestScore === this.targetScore) {
-      console.log('best', bestScore);
-      this.finished = true;
+
+    if(this.bestScore < maxScore){
+      this.best = this.population[index];
+      this.bestScore = maxScore;
+    }
+
+
+    console.log(this.bestScore);
+
+    if (this.bestScore === this.targetScore) {
+      console.log('pocet generacii: ', this.generations);
+      this.evolved = true;
     }
   }
 
-  this.isFinished = function() {
-    return this.finished;
+  this.isEvolved = function() {
+    return this.evolved;
   }
 
   this.getGenerations = function() {
