@@ -1,13 +1,12 @@
 function Population(populationSize, mutationRate, genomesMaxSize, targetScore, strategy){
-  this.population = [];
-  this.matingPool = [];
-  this.generations = 0;
-  this.evolved = false;
-  this.mutationRate = mutationRate;
-  this.targetScore = targetScore;
   this.bestScore = 0;
-  this.mean;
+  this.evolved = false;
+  this.generations = 0;
   this.makeSelection;
+  this.matingPool = [];
+  this.mutationRate = mutationRate;
+  this.population = [];
+  this.targetScore = targetScore;
 
   for(let i = 0; i< populationSize; i++){
     this.population[i] = new Individual(genomesMaxSize);
@@ -117,7 +116,7 @@ function Population(populationSize, mutationRate, genomesMaxSize, targetScore, s
     console.log(this.bestScore);
 
     if (this.bestScore === this.targetScore) {
-      console.log('pocet generacii: ', this.generations);
+      console.log('number of generations: ', this.generations);
       this.evolved = true;
     }
   }
